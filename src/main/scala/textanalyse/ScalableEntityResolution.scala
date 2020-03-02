@@ -17,8 +17,8 @@ import scala.collection.immutable
 class ScalableEntityResolution(sc: SparkContext, dat1: String, dat2: String, stopwordsFile: String, goldStandardFile: String) extends EntityResolution(sc, dat1, dat2, stopwordsFile, goldStandardFile) {
 
   // Creation of the tf-idf-Dictionaries
-  createCorpus
-  calculateIDF
+  createCorpus()
+  calculateIDF()
   val idfsFullBroadcast: Broadcast[Map[String, Double]] = sc.broadcast(idfDict)
 
   // Preparation of all Document Vectors
@@ -68,7 +68,7 @@ class ScalableEntityResolution(sc: SparkContext, dat1: String, dat2: String, sto
     /*
      * Aufbau eines inversen Index 
      * Die Funktion soll die Variablen amazonWeightsRDD und googleWeightsRDD so
-     * umwandeln, dass aus dem EingabeRDD vom Typ  RDD[(String, Map[String,Double])]
+     * umwandeln, dass aus dem EingabeRDD vom Typ RDD[(String, Map[String,Double])]
      * alle Tupel der Form (Wort, ProduktID) extrahiert werden.
      * Verwenden Sie dazu die Funktion invert im object und speichern Sie die
      * Ergebnisse in amazonInvPairsRDD und googleInvPairsRDD. Cachen Sie
@@ -88,7 +88,6 @@ class ScalableEntityResolution(sc: SparkContext, dat1: String, dat2: String, sto
      * Speichern Sie das Ergebnis in die Variable commonTokens und verwenden Sie
      * dazu die Funktion swap aus dem object.
      */
-
 
     commonTokens = amazonInvPairsRDD.join(googleInvPairsRDD).map(ScalableEntityResolution.swap).groupByKey().cache() //map(x => (x._1, x._2.toSet)) // sehr langsam!!
 
@@ -114,21 +113,10 @@ class ScalableEntityResolution(sc: SparkContext, dat1: String, dat2: String, sto
     val amazonNormBroadcast_ = this.amazonNormsBroadcast
     val googleNormBroadcast_ = this.googleNormsBroadcast
 
-    /*
-    println("commonTokens_")
-    commonTokens_.take(10).foreach(println)
-    println("amazonWeightsBroadcast_")
-    amazonWeightsBroadcast_.value.take(5).foreach(println)
-    println("googleWeightsBroadcast_")
-    googleWeightsBroadcast_.value.take(5).foreach(println)
-    println("amazonNormBroadcast_")
-    amazonNormBroadcast_.value.take(5).foreach(println) */
-
     similaritiesFullRDD = commonTokens_.map(x => ScalableEntityResolution.fastCosinusSimilarity(x, amazonWeightsBroadcast_, googleWeightsBroadcast_, amazonNormBroadcast_, googleNormBroadcast_)).cache()
 
     simsFullValuesRDD = similaritiesFullRDD.map(_._2).cache()
-    //  println("similaritiesFullRDD")
-    //  similaritiesFullRDD.take(10).foreach(println)
+
   }
 
   /*
@@ -314,15 +302,11 @@ object ScalableEntityResolution {
     val googleRec = record._1._2
     val commonTokens = record._2
 
-    // var summe: Double = 0.0
-    // for (token <- commonTokens) summe += ((amazonWeightsBroad.value(amazonRec))(token) * (googleWeightsBroad.value(googleRec))(token))
-
     val summe = commonTokens.foldLeft(0.0)((summe, token) => summe + ((amazonWeightsBroad.value(amazonRec)) (token) * (googleWeightsBroad.value(googleRec)) (token)))
 
     val cosSimValue = summe / (amazonNormsBroad.value(amazonRec) * googleNormsBroad.value(googleRec))
     val key = (amazonRec, googleRec)
     (key, cosSimValue)
-
 
   }
 
@@ -348,7 +332,6 @@ object ScalableEntityResolution {
     val b = bin(score, nthresholds)
     fpCounts += set_bit(b, 1, BINS)
   }
-
 
   def sub_element(score: Double, BINS: Int, nthresholds: Int, fpCounts: Accumulator[Vector[Int]]): Unit = {
     val b = bin(score, nthresholds)

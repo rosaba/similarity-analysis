@@ -50,7 +50,7 @@ class EntityResolution (sc:SparkContext, dat1:String, dat2:String, stopwordsFile
     largestLists.first()
   }
 
-  def createCorpus() = {
+  def createCorpus(): Unit = {
 
     /*
      * Erstellt die Tokenmenge für die Amazon und die Google-Produkte
@@ -65,7 +65,7 @@ class EntityResolution (sc:SparkContext, dat1:String, dat2:String, stopwordsFile
   }
 
 
-  def calculateIDF() = {
+  def calculateIDF(): Unit = {
 
     /*
      * Berechnung des IDF-Dictionaries auf Basis des erzeugten Korpus
@@ -74,8 +74,8 @@ class EntityResolution (sc:SparkContext, dat1:String, dat2:String, stopwordsFile
 
     val numProd: Double = corpusRDD.count // number of products (documents)
     val uniqueTokens = corpusRDD.flatMap(x => x._2.toSet)  // direkt nur values nehmen statt x._2!!
-    val idfPerToken = uniqueTokens.map((_, 1)).reduceByKey(_ + _).map(x => (x._1, numProd / x._2)) // mit groupBy u
-    idfDict = idfPerToken.collect().toMap // unschön!!? // collectAsMap??
+    val idfPerToken = uniqueTokens.map((_, 1)).reduceByKey(_ + _).map(x => (x._1, numProd / x._2))
+    idfDict = idfPerToken.collect().toMap
 
   }
 
